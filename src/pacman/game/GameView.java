@@ -323,7 +323,7 @@ public final class GameView extends JComponent
         this.frame=new GameFrame(this);
               
         //just wait for a bit for player to be ready
-        try{Thread.sleep(2000);}catch(Exception e){}
+        try{Thread.sleep(200);}catch(Exception e){}
         
         return this;
     }
