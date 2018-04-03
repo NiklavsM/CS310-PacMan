@@ -16,7 +16,7 @@ import java.util.Random;
  */
 public class MyPacMan extends Controller<MOVE> {
     private Random rnd = new Random();
-    private List<Constants.GHOST> ghosts = ghosts();// should use values
+    private Constants.GHOST[] ghosts = Constants.GHOST.values();
     private MOVE[] allMoves=MOVE.values();
 
     /* (non-Javadoc)
@@ -52,7 +52,7 @@ public class MyPacMan extends Controller<MOVE> {
             //System.out.println("closestGhostDistance " + closestGhostDistance);
         }
 
-        if (closestGhostDistance < 20 && game.getGhostEdibleTime(closestGhost) < 10) {
+        if (closestGhostDistance < 10 && game.getGhostEdibleTime(closestGhost) < 10) {
             for(MOVE move :allMoves) {
                 Game copy = game.copy();
                 copy.updatePacMan(move);
