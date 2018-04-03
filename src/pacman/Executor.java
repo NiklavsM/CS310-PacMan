@@ -49,8 +49,8 @@ public class Executor {
 		// From Damien: This is the version to run to get an estimated grade for
 		// your submission
 
-		// int numTrials = 100;
-		// exec.runExperiment(new RandomPacMan(), new Legacy(), numTrials);
+		 int numTrials = 10;
+		 exec.runExperiment(new MyPacMan(), new Legacy(), numTrials);
 
 		// run a game in synchronous mode: game waits until controllers respond.
 		// int delay = 16;
@@ -62,7 +62,7 @@ public class Executor {
 		boolean visual = true;
 		// exec.runGameTimed(new NearestPillPacMan(),new
 		// AggressiveGhosts(),visual);
-		exec.runGameTimed(new MyPacMan(), new Legacy(), visual);
+		//exec.runGameTimed(new MyPacMan(), new Legacy(), visual);
 		// exec.runGameTimed(new HumanController(new KeyBoardInput()),new
 		// StarterGhosts(),visual);
 		// */
