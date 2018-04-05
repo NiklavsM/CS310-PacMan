@@ -5,9 +5,7 @@ import pacman.game.Constants;
 import pacman.game.Constants.MOVE;
 import pacman.game.Game;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /*
  * This is the class you need to modify for your entry. In particular, you need to
@@ -17,7 +15,7 @@ import java.util.Random;
 public class MyPacMan extends Controller<MOVE> {
     private Random rnd = new Random();
     private Constants.GHOST[] ghosts = Constants.GHOST.values();
-    private MOVE[] allMoves=MOVE.values();
+    private MOVE[] allMoves = MOVE.values();
 
     /* (non-Javadoc)
      * @see pacman.controllers.Controller#getMove(pacman.game.Game, long)
@@ -44,22 +42,32 @@ public class MyPacMan extends Controller<MOVE> {
             //System.out.println("closestGhostDistance " + closestGhostDistance);
         }
 
-        if (closestGhostDistance < 10 && game.getGhostEdibleTime(closestGhost) < 10) {
-            for(MOVE move :allMoves) {
+        if (closestGhostDistance < 5 && game.getGhostEdibleTime(closestGhost) < 10) { // Run away from ghosts
+            Map<Game, MOVE> choices = new HashMap<>();
+            for (MOVE move : allMoves) {
                 Game copy = game.copy();
                 copy.updatePacMan(move);
-                if(copy.getShortestPathDistance(copy.getPacmanCurrentNodeIndex(),closestGhostNode) > closestGhostDistance){
+                if (copy.getShortestPathDistance(copy.getPacmanCurrentNodeIndex(), closestGhostNode) > closestGhostDistance) {
                     System.out.println("AWAAY  " + move + " " + closestGhost);
-                    return move;
+                    choices.put(copy, move);
                 }
             }
-
+            double bestScore = Integer.MIN_VALUE;
+            MOVE bestMove = null;
+            for (Game gameTry : choices.keySet()) {
+                double currentScore = evaluateAwayFromGhosts(gameTry);
+                if (bestScore < currentScore) {
+                    bestScore = currentScore;
+                    bestMove = choices.get(gameTry);
+                }
+            }
+            return bestMove;
         }
         if (game.getGhostEdibleTime(closestGhost) > 10) {
-            for(MOVE move :allMoves) {
+            for (MOVE move : allMoves) {
                 Game copy = game.copy();
                 copy.updatePacMan(move);
-                if(copy.getShortestPathDistance(copy.getPacmanCurrentNodeIndex(),closestGhostNode) < closestGhostDistance){
+                if (copy.getShortestPathDistance(copy.getPacmanCurrentNodeIndex(), closestGhostNode) < closestGhostDistance) {
                     System.out.println("Towards  " + move + " " + closestGhost);
                     return move;
                 }
@@ -68,28 +76,32 @@ public class MyPacMan extends Controller<MOVE> {
         for (int i = 0; i < game.getActivePillsIndices().length; i++) {
             int pill = game.getActivePillsIndices()[i];
             int distanceToPill = game.getShortestPathDistance(pacmanNode, pill);
-            if(distanceToPill < distanceToClosestPill){
+            if (distanceToPill < distanceToClosestPill) {
                 distanceToClosestPill = distanceToPill;
                 closestPill = pill;
             }
         }
         //System.out.println("NOMNOM");
-            for(MOVE move :allMoves) {
-                Game copy = game.copy();
-                copy.updatePacMan(move);
-                if(copy.getShortestPathDistance(copy.getPacmanCurrentNodeIndex(),closestPill) < distanceToClosestPill){
-                    return move;
-                }
+        for (MOVE move : allMoves) {
+            Game copy = game.copy();
+            copy.updatePacMan(move);
+            if (copy.getShortestPathDistance(copy.getPacmanCurrentNodeIndex(), closestPill) < distanceToClosestPill) {
+                return move;
             }
-            return MOVE.RIGHT;
+        }
+        return MOVE.RIGHT;
     }
 
-    private List<Constants.GHOST> ghosts() {
-        List<Constants.GHOST> ghosts = new LinkedList<>();
-        ghosts.add(Constants.GHOST.BLINKY);
-        ghosts.add(Constants.GHOST.PINKY);
-        ghosts.add(Constants.GHOST.INKY);
-        ghosts.add(Constants.GHOST.SUE);
-        return ghosts;
+    private double evaluateAwayFromGhosts(Game game) {
+        double result = 10000;
+        int pacman = game.getPacmanCurrentNodeIndex();
+        for (Constants.GHOST ghost : ghosts) {
+            System.out.println("distance: " + game.getShortestPathDistance(pacman, game.getGhostCurrentNodeIndex(ghost)));
+            if (game.getShortestPathDistance(pacman, game.getGhostCurrentNodeIndex(ghost)) < 20 ) {
+                result -= game.getShortestPathDistance(pacman, game.getGhostCurrentNodeIndex(ghost));
+            }
+        }
+        return result;
     }
 }
+
