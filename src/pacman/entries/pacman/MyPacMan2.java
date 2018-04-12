@@ -28,7 +28,7 @@ public class MyPacMan2 extends Controller<MOVE> {
         MOVE bestMove = null;
         int bestScore = Integer.MIN_VALUE;
 
-        if (game.getPossibleMoves(pacmanNodeIndex).length > 2) {
+        if (game.getPossibleMoves(pacmanNodeIndex).length > 2 || game.wasPowerPillEaten()) {
             for (MOVE move : game.getPossibleMoves(pacmanNodeIndex)) {
                 Game copy = game.copy();
                 copy.updatePacMan(move);
@@ -97,7 +97,7 @@ public class MyPacMan2 extends Controller<MOVE> {
 
     private int rollout(Game game) {
         Legacy ghots = new Legacy();
-        for (int i = 0; i < 40; i++) {
+        for (int i = 0; i < 100; i++) {
             if (game.getPossibleMoves(game.getPacmanCurrentNodeIndex()).length > 2) {
                 game.updatePacMan(getBestMove(game));
             } else {
