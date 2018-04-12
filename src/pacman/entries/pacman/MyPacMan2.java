@@ -18,54 +18,97 @@ public class MyPacMan2 extends Controller<MOVE> {
     private Random rnd = new Random();
     private Constants.GHOST[] ghosts = Constants.GHOST.values();
     private MOVE[] allMoves = MOVE.values();
-    private Set<Node> visited = new LinkedHashSet<>();
+//    private MOVE[] movesAvailable = MOVE.values();
 
     /* (non-Javadoc)
      * @see pacman.controllers.Controller#getMove(pacman.game.Game, long)
      */
     public MOVE getMove(Game game, long timeDue) {
-        Map<MOVE, Integer> moveScoreMap = new HashMap<>();
         int pacmanNodeIndex = game.getPacmanCurrentNodeIndex();
-        MOVE[] moves = game.getPossibleMoves(pacmanNodeIndex);
-
-        for (MOVE move : moves) {
-            Game copy = game.copy();
-            copy.updatePacMan(move);
-            int score = rollout(copy);
-            if (!moveScoreMap.containsKey(move)) {
-                moveScoreMap.put(move, score);
-            } else {
-                moveScoreMap.put(move, moveScoreMap.get(move) + score);
-            }
-        }
         MOVE bestMove = null;
         int bestScore = Integer.MIN_VALUE;
-        for (MOVE move : moveScoreMap.keySet()) {
-            int score = moveScoreMap.get(move);
-            System.out.println(move + "  score:  " + score);
-            if (game.getPacmanLastMoveMade() == move) {
-                if (bestScore <= score) {
-                    bestMove = move;
-                    bestScore = score;
-                }
-            } else {
-                if (bestScore < score) {
-                    bestMove = move;
-                    bestScore = score;
+
+        if (game.getPossibleMoves(pacmanNodeIndex).length > 2) {
+            for (MOVE move : game.getPossibleMoves(pacmanNodeIndex)) {
+                Game copy = game.copy();
+                copy.updatePacMan(move);
+                int score = rollout(copy);
+                System.out.println(move + " score: " + score);
+                if (move == game.getPacmanLastMoveMade()) {
+                    if (bestScore <= score) {
+                        bestMove = move;
+                        bestScore = score;
+                    }
+                } else {
+                    if (bestScore < score) {
+                        bestMove = move;
+                        bestScore = score;
+                    }
                 }
             }
-        }
-        System.out.println();
+            System.out.println();
 
-        return bestMove;
+            return bestMove;
+        }
+        return moveThatIsNotBack(game.getPacmanLastMoveMade(), game.getPossibleMoves(pacmanNodeIndex));
     }
 
+    private MOVE moveThatIsNotBack(MOVE pacmanPreviousMove, MOVE[] movesAvailable) {
+
+        for (MOVE moveCandidate : movesAvailable) {
+            if (pacmanPreviousMove == MOVE.RIGHT) {
+                if (moveCandidate == MOVE.RIGHT || moveCandidate == MOVE.UP || moveCandidate == MOVE.DOWN)
+                    return moveCandidate;
+            }
+            if (pacmanPreviousMove == MOVE.LEFT) {
+                if (moveCandidate == MOVE.LEFT || moveCandidate == MOVE.UP || moveCandidate == MOVE.DOWN)
+                    return moveCandidate;
+            }
+            if (pacmanPreviousMove == MOVE.UP) {
+                if (moveCandidate == MOVE.RIGHT || moveCandidate == MOVE.UP || moveCandidate == MOVE.LEFT)
+                    return moveCandidate;
+            }
+            if (pacmanPreviousMove == MOVE.DOWN) {
+                if (moveCandidate == MOVE.RIGHT || moveCandidate == MOVE.LEFT || moveCandidate == MOVE.DOWN)
+                    return moveCandidate;
+            }
+
+        }
+        return MOVE.NEUTRAL;
+    }
+
+    ;
+
+//    private boolean isNewCrossroads(MOVE[] newMoves){
+//        if(newMoves.length != movesAvailable.length) return true;
+//        for(MOVE move : movesAvailable){
+//            boolean conatins = false;
+//            for(MOVE newMove : newMoves){
+//                if(move == newMove){
+//                    conatins = true;
+//                }
+//            }
+//            if(!conatins){
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
+
     private int rollout(Game game) {
+        Legacy ghots = new Legacy();
         for (int i = 0; i < 40; i++) {
-            game.updatePacMan(getBestMove(game));
-            Legacy ghots = new Legacy();
+            if (game.getPossibleMoves(game.getPacmanCurrentNodeIndex()).length > 2) {
+                game.updatePacMan(getBestMove(game));
+            } else {
+                game.updatePacMan(moveThatIsNotBack(game.getPacmanLastMoveMade(), game.getPossibleMoves(game.getPacmanCurrentNodeIndex())));
+            }
             game.updateGhosts(ghots.getMove(game, 1));
             game.updateGame();
+            if (game.wasPacManEaten()) {
+                System.out.println("HEREEE");
+                return game.getScore();
+            }
         }
         return evaluateState(game);
     }
@@ -155,9 +198,9 @@ public class MyPacMan2 extends Controller<MOVE> {
     }
 
     private int evaluateState(Game game) {
-        int score;
-        score =+ game.getPacmanNumberOfLivesRemaining()*100000;
-        score =+ game.getScore();
+        int score = 0;
+        score += game.getPacmanNumberOfLivesRemaining() * 100000;
+        score += game.getScore();
         return score;
     }
 
