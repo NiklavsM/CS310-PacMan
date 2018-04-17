@@ -28,12 +28,11 @@ public class MyPacMan2 extends Controller<MOVE> {
         MOVE bestMove = null;
         int bestScore = Integer.MIN_VALUE;
 
-        if (game.getPossibleMoves(pacmanNodeIndex).length > 2 || game.wasPowerPillEaten()) {
+        if (game.getPossibleMoves(pacmanNodeIndex).length > 2 || game.wasPowerPillEaten() || ghostWasEaten(game)) {
             for (MOVE move : game.getPossibleMoves(pacmanNodeIndex)) {
                 Game copy = game.copy();
                 copy.updatePacMan(move);
                 int score = rollout(copy);
-                System.out.println(move + " score: " + score);
                 if (move == game.getPacmanLastMoveMade()) {
                     if (bestScore <= score) {
                         bestMove = move;
@@ -46,11 +45,17 @@ public class MyPacMan2 extends Controller<MOVE> {
                     }
                 }
             }
-            System.out.println();
 
             return bestMove;
         }
         return moveThatIsNotBack(game.getPacmanLastMoveMade(), game.getPossibleMoves(pacmanNodeIndex));
+    }
+
+    private boolean ghostWasEaten(Game game){
+        for(Constants.GHOST ghost : ghosts){
+            if(game.wasGhostEaten(ghost)) return true;
+        }
+        return false;
     }
 
     private MOVE moveThatIsNotBack(MOVE pacmanPreviousMove, MOVE[] movesAvailable) {
@@ -72,48 +77,29 @@ public class MyPacMan2 extends Controller<MOVE> {
                 if (moveCandidate == MOVE.RIGHT || moveCandidate == MOVE.LEFT || moveCandidate == MOVE.DOWN)
                     return moveCandidate;
             }
-
         }
         return MOVE.NEUTRAL;
     }
 
-    ;
-
-//    private boolean isNewCrossroads(MOVE[] newMoves){
-//        if(newMoves.length != movesAvailable.length) return true;
-//        for(MOVE move : movesAvailable){
-//            boolean conatins = false;
-//            for(MOVE newMove : newMoves){
-//                if(move == newMove){
-//                    conatins = true;
-//                }
-//            }
-//            if(!conatins){
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
 
     private int rollout(Game game) {
-        Legacy ghots = new Legacy();
-        for (int i = 0; i < 100; i++) {
-            if (game.getPossibleMoves(game.getPacmanCurrentNodeIndex()).length > 2) {
+        Legacy ghosts = new Legacy();
+        for (int i = 0; i < 100; i++) { // simulate 100 ticks
+            if (game.getPossibleMoves(game.getPacmanCurrentNodeIndex()).length > 2 || game.wasPowerPillEaten() || ghostWasEaten(game)) {
                 game.updatePacMan(getBestMove(game));
             } else {
                 game.updatePacMan(moveThatIsNotBack(game.getPacmanLastMoveMade(), game.getPossibleMoves(game.getPacmanCurrentNodeIndex())));
             }
-            game.updateGhosts(ghots.getMove(game, 1));
+            game.updateGhosts(ghosts.getMove(game, 1));
             game.updateGame();
             if (game.wasPacManEaten()) {
-                System.out.println("HEREEE");
                 return game.getScore();
             }
         }
         return evaluateState(game);
     }
 
-    public MOVE getBestMove(Game game) {
+    private MOVE getBestMove(Game game) {
 
         int pacmanNode = game.getPacmanCurrentNodeIndex();
         int closestPill = 0;
@@ -122,7 +108,7 @@ public class MyPacMan2 extends Controller<MOVE> {
         int closestGhostNode = 0;
         int closestGhostDistance = Integer.MAX_VALUE;
 
-        for (Constants.GHOST ghost : ghosts) {
+        for (Constants.GHOST ghost : ghosts) { // get closest ghost
             int ghostNode = game.getGhostCurrentNodeIndex(ghost);
             int distanceToGhost = game.getShortestPathDistance(pacmanNode, ghostNode);
 
@@ -132,10 +118,9 @@ public class MyPacMan2 extends Controller<MOVE> {
                 closestGhost = ghost;
                 closestGhostNode = ghostNode;
             }
-            //System.out.println("closestGhostDistance " + closestGhostDistance);
         }
 
-        if (closestGhostDistance < 5 && game.getGhostEdibleTime(closestGhost) < 10) { // Run away from ghosts
+        if (closestGhostDistance < 5 && game.getGhostEdibleTime(closestGhost) < 7) { // Run away from the ghost
             Map<Game, MOVE> choices = new HashMap<>();
             for (MOVE move : allMoves) {
                 Game copy = game.copy();
@@ -156,7 +141,7 @@ public class MyPacMan2 extends Controller<MOVE> {
             }
             return bestMove;
         }
-        if (game.getGhostEdibleTime(closestGhost) > 10) {
+        if (game.getGhostEdibleTime(closestGhost) >= 7) { // chaise closest ghost if it is edible
             for (MOVE move : allMoves) {
                 Game copy = game.copy();
                 copy.updatePacMan(move);
@@ -166,7 +151,7 @@ public class MyPacMan2 extends Controller<MOVE> {
                 }
             }
         }
-        for (int i = 0; i < game.getActivePillsIndices().length; i++) {
+        for (int i = 0; i < game.getActivePillsIndices().length; i++) { // finds closest pill
             int pill = game.getActivePillsIndices()[i];
             int distanceToPill = game.getShortestPathDistance(pacmanNode, pill);
             if (distanceToPill < distanceToClosestPill) {
@@ -174,18 +159,17 @@ public class MyPacMan2 extends Controller<MOVE> {
                 closestPill = pill;
             }
         }
-        //System.out.println("NOMNOM");
-        for (MOVE move : allMoves) {
+        for (MOVE move : allMoves) { // if nothing else go towards closest pill
             Game copy = game.copy();
             copy.updatePacMan(move);
-            if (copy.getShortestPathDistance(copy.getPacmanCurrentNodeIndex(), closestPill) < distanceToClosestPill) {
+            if (copy.getShortestPathDistance(copy.getPacmanCurrentNodeIndex(), closestPill) < distanceToClosestPill) { // got closer to pill check because go towards function is bad
                 return move;
             }
         }
         return MOVE.RIGHT;
     }
 
-    private double evaluateAwayFromGhosts(Game game) {
+    private double evaluateAwayFromGhosts(Game game) {// check how much away from near ghosts is the pacman. // i think bad should make something better
         double result = 10000;
         int pacman = game.getPacmanCurrentNodeIndex();
         for (Constants.GHOST ghost : ghosts) {
@@ -199,8 +183,8 @@ public class MyPacMan2 extends Controller<MOVE> {
 
     private int evaluateState(Game game) {
         int score = 0;
-        score += game.getPacmanNumberOfLivesRemaining() * 100000;
-        score += game.getScore();
+        score += game.getPacmanNumberOfLivesRemaining() * 1000000;
+        score += game.getScore();// basically try not to loose lives but if both states have the same lives pick the one with the biggest score
         return score;
     }
 

@@ -50,7 +50,7 @@ public class Executor {
 		// From Damien: This is the version to run to get an estimated grade for
 		// your submission
 
-		 int numTrials = 10;
+		 int numTrials = 50;
 		 exec.runExperiment(new MyPacMan2(), new Legacy(), numTrials);
 
 		// run a game in synchronous mode: game waits until controllers respond.
